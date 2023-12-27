@@ -1,60 +1,85 @@
 package codewars;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Queue;
 
 public class Chess {
 
-    public static int findMinimumMoves(int count, String start, String finish, List<String> movesAlreadyCheck) {
-        final List<String> possibleMoves = possibleMove(start).stream().filter(move -> !movesAlreadyCheck.contains(move)).collect(Collectors.toList());
-        System.out.print(count);
-        System.out.println(Arrays.toString(possibleMoves.toArray()));
-        for (String move : possibleMoves) {
-            if (move.equals(finish)) {
-                System.out.println(move);
-                return count;
+    public static int knight(String start, String end) {
+        int startX = start.charAt(0) - 'a' + 1;
+        int startY = Integer.parseInt(String.valueOf(start.charAt(1)));
+        int endX = end.charAt(0) - 'a' + 1;
+        int endY = Integer.parseInt(String.valueOf(end.charAt(1)));
+
+        return calculateMoves(startX, startY, endX, endY);
+    }
+
+    private static int calculateMoves(int startX, int startY, int endX, int endY) {
+        int[] dx = {1, 2, 2, 1, -1, -2, -2, -1};
+        int[] dy = {2, 1, -1, -2, -2, -1, 1, 2};
+
+        int[][] distance = new int[9][9];
+
+        Queue<Pair<Integer, Integer>> queue = new LinkedList<>();
+        queue.offer(new Pair<>(startX, startY));
+
+        while (!queue.isEmpty()) {
+            Pair<Integer, Integer> current = queue.poll();
+            int x = current.getKey();
+            int y = current.getValue();
+
+            if (x == endX && y == endY) {
+                return distance[x][y];
             }
-            movesAlreadyCheck.add(move);
-        }
-        for (String move : possibleMoves) {
-            final int minimumMoves = findMinimumMoves(count + 1, move, finish, movesAlreadyCheck);
-            if (count > 0) {
-                return minimumMoves;
+
+            for (int i = 0; i < 8; i++) {
+                int nx = x + dx[i];
+                int ny = y + dy[i];
+
+                if (isValid(nx, ny) && distance[nx][ny] == 0) {
+                    distance[nx][ny] = distance[x][y] + 1;
+                    queue.offer(new Pair<>(nx, ny));
+                }
             }
         }
-        return 0;
+
+        return -1; // Destination not reachable
     }
 
-    public static int knight(String start, String finish) {
-        return findMinimumMoves(1, start, finish, new ArrayList<>());
+    private static boolean isValid(int x, int y) {
+        return x >= 1 && x <= 8 && y >= 1 && y <= 8;
     }
 
-    private static List<String> possibleMove(String position) {
-        final char[] chars = position.toCharArray();
-        char files = chars[0];
-        char ranks = chars[1];
-        String[] movs = new String[8];
-        movs[0] = Character.toString(files + 1) + Character.toString(ranks + 2);
-        movs[1] = Character.toString(files + 1) + Character.toString(ranks - 2);
-        movs[2] = Character.toString(files - 1) + Character.toString(ranks - 2);
-        movs[3] = Character.toString(files - 1) + Character.toString(ranks + 2);
-        movs[4] = Character.toString(files + 2) + Character.toString(ranks + 1);
-        movs[5] = Character.toString(files + 2) + Character.toString(ranks - 1);
-        movs[6] = Character.toString(files - 2) + Character.toString(ranks - 1);
-        movs[7] = Character.toString(files - 2) + Character.toString(ranks + 1);
 
-        return Arrays.stream(movs)
-                .filter(Chess::isMovePossible)
-                .collect(Collectors.toList());
-    }
+    public static class Pair<K, V> {
+        private final K key;
+        private final V value;
 
-    private static boolean isMovePossible(String position) {
-        final char[] chars = position.toCharArray();
-        char files = chars[0];
-        char ranks = chars[1];
+        public Pair(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
 
-        return files > '`' && files < 'i' && ranks > '0' && ranks < '9';
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pair<?, ?> pair = (Pair<?, ?>) o;
+            return Objects.equals(key, pair.key) && Objects.equals(value, pair.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, value);
+        }
     }
 }
