@@ -3,7 +3,7 @@ name: Run Tests
 on: [push, pull_request]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,5 +16,35 @@ jobs:
           distribution: 'adopt'
           java-version: '21'
 
-      - name: Build and run tests
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Run tests and generate reports
         run: ./gradlew test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: build/test-results
+
+  analyze:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v2
+        with:
+          name: test-results
+          path: build/test-results
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '21'
+
+      - name: Analyze test results
+        run: ./gradlew test jacocoTestReport
+
