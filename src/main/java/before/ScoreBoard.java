@@ -1,99 +1,100 @@
 package before;
 
 import before.point.Point;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class ScoreBoard {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ScoreBoard.class.getName());
-    private Player playerA;
-    private Player playerB;
-    private Player winner;
+    private Point playerAPoints;
+    private Point playerBPoints;
+    private Player gameWinner;
 
-
-    public ScoreBoard(Player playerA, Player playerB){
-        Objects.requireNonNull(playerA, "Player A must not be null");
-        if(!"A".equals(playerA.name())){
-            throw new IllegalArgumentException("Player A must have name equals to A");
-        }
-        Objects.requireNonNull(playerB, "Player B must not be null");
-        if(!"B".equals(playerB.name())){
-            throw new IllegalArgumentException("Player B must have name equals to B");
-        }
-        this.playerA = playerA;
-        this.playerB = playerB;
+    public ScoreBoard() {
+        playerAPoints = Point.love();
+        playerBPoints = Point.love();
+        gameWinner = null;
     }
 
-    public Player mapCommandToPlayer(String command){
-        if("A".equals(command)){
-            return playerA;
-        }
-        else {
-            return playerB;
-        }
+    public Player mapCommandToPlayer(char command) {
+        return switch (command) {
+            case 'A' -> Player.A;
+            case 'B' -> Player.B;
+            default -> throw new IllegalArgumentException("Invalid character: " + command);
+        };
     }
-    public void applyCommand(Player pointsWinner){
-        Point winnersScore = pointsWinner.score();
-        Player looser = pointsWinner.equals(playerA) ? playerB : playerA;
-        if(isADecisivePoint(winnersScore, looser))
-        {
+
+    public ScoreBoard applyCommand(Player pointsWinner) {
+        ScoreTuple scoreTuple = createScoreTuple(pointsWinner);
+        if (isADecisivePoint(scoreTuple)) {
             winGame(pointsWinner);
-        }
-        else if(isDeuce(looser, winnersScore)){
+        } else if (isScoreGoingToDeuce(scoreTuple)) {
             deuce();
-        }
-        else if(isARegularPoint(looser)) {
+        } else if (isARegularPoint(scoreTuple.loserScore())) {
             updateNewScore(pointsWinner);
         }
+        return this;
     }
 
-    private static boolean isARegularPoint(Player looser) {
-        return looser.score().rank() != 4;
+    private ScoreTuple createScoreTuple(Player pointsWinner) {
+        return switch (pointsWinner) {
+            case A -> new ScoreTuple(playerAPoints, playerBPoints);
+            case B -> new ScoreTuple(playerBPoints, playerAPoints);
+        };
     }
 
-    private static boolean isADecisivePoint(Point winnersScore, Player looser) {
-        return winnersScore.rank() >= 3 && winnersScore.rank() - looser.score().rank() > 1;
+    private static boolean isARegularPoint(Point looser) {
+        return looser.rank() != 4;
     }
 
-    private static boolean isDeuce(Player looser, Point winnersScore) {
-        return looser.score().isAdvantage() || looser.score().rank() == 3 && winnersScore.rank() == 2;
+    private static boolean isADecisivePoint(ScoreTuple scoreTuple) {
+        return scoreTuple.winnerScore().rank() >= 3
+                && scoreTuple.winnerScore().rank() - scoreTuple.loserScore().rank() > 1;
+    }
+
+    private static boolean isScoreGoingToDeuce(ScoreTuple scoreTuple) {
+        return scoreTuple.loserScore().isAdvantage()
+                || scoreTuple.loserScore().rank() == 3 && scoreTuple.winnerScore().rank() == 2;
     }
 
     private void deuce() {
-        this.playerA = Player.of(playerA, Point.forty());
-        this.playerB = Player.of(playerB, Point.forty());
-        logScore();
+        this.playerAPoints = Point.forty();
+        this.playerBPoints = Point.forty();
+    }
+
+    public boolean isDeuce() {
+        return playerAPoints.isForty() && playerBPoints.isForty();
     }
 
     private void updateNewScore(Player pointsWinner) {
-        if(pointsWinner.equals(playerA)){
-            this.playerA = playerA.wonPoint();
-            this.playerB = playerB.lostPoint();
-        } else {
-            this.playerA = playerA.lostPoint();
-            this.playerB = playerB.wonPoint();
+        switch (pointsWinner) {
+            case A -> {
+                this.playerAPoints = playerAPoints.winsPoint();
+                this.playerBPoints = playerBPoints.lostPoint();
+            }
+            case B -> {
+                this.playerAPoints = playerAPoints.lostPoint();
+                this.playerBPoints = playerBPoints.winsPoint();
+            }
         }
-        logScore();
     }
 
-    private void logScore() {
-        if(playerA.score().isForty() && playerB.score().isForty()){
-            LOGGER.info("Deuce");
-        }
-        else {
-            LOGGER.info("Player A : {} / Player B : {}", playerA.score(), playerB.score());
-        }
-    }
 
     private void winGame(Player gameWinner) {
-        LOGGER.info("Player {} wins the game", gameWinner.name());
-        this.winner = gameWinner;
+        this.gameWinner = gameWinner;
     }
 
-    public Player getWinner() {
-        return winner;
+    public Point getPlayerAPoints() {
+        return playerAPoints;
     }
+
+    public Point getPlayerBPoints() {
+        return playerBPoints;
+    }
+
+    public Player getGameWinner() {
+        return gameWinner;
+    }
+
+    record ScoreTuple(Point winnerScore, Point loserScore) {
+    }
+
 }
