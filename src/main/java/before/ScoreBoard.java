@@ -14,14 +14,6 @@ public class ScoreBoard {
         gameWinner = null;
     }
 
-    public Player mapCommandToPlayer(char command) {
-        return switch (command) {
-            case 'A' -> Player.A;
-            case 'B' -> Player.B;
-            default -> throw new IllegalArgumentException("Invalid character: " + command);
-        };
-    }
-
     public ScoreBoard applyCommand(Player pointsWinner) {
         ScoreTuple scoreTuple = createScoreTuple(pointsWinner);
         if (isADecisivePoint(scoreTuple)) {

@@ -22,7 +22,7 @@ public class Tennis {
         final ScoreBoard scoreBoard = new ScoreBoard();
         return sequence.chars()
                 .mapToObj(ch -> (char) ch)
-                .map(scoreBoard::mapCommandToPlayer)
+                .map(Player::valueOf)
                 .map(scoreBoard::applyCommand)
                 .map(this::logScore)
                 .map(ScoreBoard::getGameWinner)
